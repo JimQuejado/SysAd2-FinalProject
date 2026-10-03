@@ -1,0 +1,43 @@
+# Sample run captured in a test environment (one Ubuntu 24.04 host, Docker install step skipped with --skip-tags install).
+# On your 3 VMs you will see the same tasks for centos-vm, ubuntu-vm1 and ubuntu-vm2, plus the Docker install tasks.
+
+
+PLAY [Build the portfolio Docker image on CentOS and Ubuntu] *******************
+
+TASK [Gathering Facts] *********************************************************
+ok: [ubuntu-vm1]
+
+TASK [Create the build directory] **********************************************
+changed: [ubuntu-vm1]
+
+TASK [Copy the Dockerfile and nginx template] **********************************
+changed: [ubuntu-vm1] => (item=Dockerfile)
+changed: [ubuntu-vm1] => (item=.dockerignore)
+changed: [ubuntu-vm1] => (item=docker)
+
+TASK [Copy the web app source] *************************************************
+changed: [ubuntu-vm1]
+
+TASK [Build the image from the Dockerfile] *************************************
+changed: [ubuntu-vm1]
+
+TASK [Also tag the image as latest] ********************************************
+changed: [ubuntu-vm1]
+
+TASK [Read the built image details] ********************************************
+ok: [ubuntu-vm1]
+
+TASK [Show the image that was built] *******************************************
+ok: [ubuntu-vm1] => {
+    "msg": [
+        "Host: ubuntu-vm1",
+        "Image: sysad2-portfolio:1.0",
+        "ID: 1a4eaff7b8f2",
+        "Size: 20.0 MB",
+        "Created: 2026-10-02T22:59:08.722060276Z"
+    ]
+}
+
+PLAY RECAP *********************************************************************
+ubuntu-vm1                 : ok=8    changed=5    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

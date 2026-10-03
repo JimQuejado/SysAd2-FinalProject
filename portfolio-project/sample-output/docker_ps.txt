@@ -1,0 +1,11 @@
+$ docker images sysad2-portfolio
+IMAGE                     ID             DISK USAGE   CONTENT SIZE   EXTRA
+sysad2-portfolio:1.0      1a4eaff7b8f2       73.8MB           21MB   U    
+sysad2-portfolio:latest   1a4eaff7b8f2       73.8MB           21MB   U    
+
+$ docker ps --filter label=project=sysad2-portfolio
+CONTAINER ID   IMAGE                  COMMAND                  CREATED          STATUS                    PORTS                  NAMES
+15bfbeb066ba   sysad2-portfolio:1.0   "/docker-entrypoint.…"   13 seconds ago   Up 12 seconds (healthy)   0.0.0.0:8090->80/tcp   portfolio-web
+
+$ curl http://localhost:8090/server-info
+{"host":"ubuntu-vm1 (Ubuntu 24.04)","container":"portfolio-web"}

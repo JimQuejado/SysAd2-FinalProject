@@ -1,0 +1,94 @@
+# Playbook 2: RUN the image built by build_image.yml as containers.
+#   ansible-playbook run_containers.yml
+- name: Run the portfolio containers on CentOS and Ubuntu
+  hosts: webservers
+  become: true
+
+  pre_tasks:
+    - name: Make sure the image exists (run build_image.yml first)
+      community.docker.docker_image_info:
+        name: "{{ image_name }}:{{ image_tag }}"
+      register: image_check
+      failed_when: image_check.images | length == 0
+
+  tasks:
+    - name: Start the portfolio containers
+      community.docker.docker_container:
+        name: "{{ item.name }}"
+        image: "{{ image_name }}:{{ image_tag }}"
+        state: started
+        restart_policy: unless-stopped
+        published_ports:
+          - "{{ item.host_port }}:80"
+        env:
+          SERVED_BY: "{{ inventory_hostname }} ({{ ansible_distribution }} {{ ansible_distribution_version }})"
+          CONTAINER_NAME: "{{ item.name }}"
+        labels:
+          project: sysad2-portfolio
+          deployed_by: ansible
+      loop: "{{ portfolio_containers }}"
+      loop_control:
+        label: "{{ item.name }} -> port {{ item.host_port }}"
+
+    - name: Gather the state of system services (used to detect firewalld)
+      ansible.builtin.service_facts:
+
+    - name: Open the ports in firewalld (CentOS, only if firewalld is running)
+      ansible.posix.firewalld:
+        port: "{{ item.host_port }}/tcp"
+        permanent: true
+        immediate: true
+        state: enabled
+      loop: "{{ portfolio_containers }}"
+      loop_control:
+        label: "{{ item.host_port }}/tcp"
+      when:
+        - ansible_os_family == "RedHat"
+        - ansible_facts.services['firewalld.service'].state | default('') == "running"
+
+    - name: Check whether ufw is active (Ubuntu)
+      ansible.builtin.command: ufw status
+      register: ufw_status
+      changed_when: false
+      failed_when: false
+      when: ansible_os_family == "Debian"
+
+    - name: Open the ports in ufw (Ubuntu, only if ufw is active)
+      community.general.ufw:
+        rule: allow
+        port: "{{ item.host_port }}"
+        proto: tcp
+      loop: "{{ portfolio_containers }}"
+      loop_control:
+        label: "{{ item.host_port }}/tcp"
+      when:
+        - ansible_os_family == "Debian"
+        - "'Status: active' in ufw_status.stdout | default('')"
+
+    - name: Wait until each container answers its health check
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ item.host_port }}/healthz"
+        return_content: true
+      register: health
+      until: health.status == 200
+      retries: 10
+      delay: 3
+      loop: "{{ portfolio_containers }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: List the running portfolio containers
+      community.docker.docker_host_info:
+        containers: true
+        containers_filters:
+          label: project=sysad2-portfolio
+      register: host_info
+
+    - name: Show where to open the site
+      ansible.builtin.debug:
+        msg: >-
+          {{ inventory_hostname }}: {{ host_info.containers | length }} container(s) running.
+          Open http://{{ ansible_host | default(inventory_hostname) }}:{{ item.host_port }}/ in a browser.
+      loop: "{{ portfolio_containers }}"
+      loop_control:
+        label: "{{ item.name }}"

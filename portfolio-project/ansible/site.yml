@@ -1,0 +1,7 @@
+# Runs both playbooks in order: build, then run.
+#   ansible-playbook site.yml
+- name: Build the image
+  ansible.builtin.import_playbook: build_image.yml
+
+- name: Run the containers
+  ansible.builtin.import_playbook: run_containers.yml

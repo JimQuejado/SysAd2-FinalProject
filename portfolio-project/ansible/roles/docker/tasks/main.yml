@@ -1,0 +1,27 @@
+# Installs Docker Engine. CentOS and Ubuntu use different package managers
+# and repositories, so the OS-specific steps live in their own files and the
+# right one is picked from the facts Ansible gathered (ansible_os_family).
+- name: Install Docker using the steps for this OS family
+  ansible.builtin.include_tasks: "{{ ansible_os_family }}.yml"
+
+- name: Start Docker now and on every boot
+  ansible.builtin.systemd_service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Let the SSH user run docker without sudo
+  ansible.builtin.user:
+    name: "{{ item }}"
+    groups: docker
+    append: true
+  loop: "{{ docker_users }}"
+
+- name: Show the installed Docker version
+  ansible.builtin.command: docker version --format '{{ "{{" }} .Server.Version {{ "}}" }}'
+  register: docker_version
+  changed_when: false
+
+- name: Report Docker version
+  ansible.builtin.debug:
+    msg: "{{ inventory_hostname }} ({{ ansible_distribution }} {{ ansible_distribution_version }}) runs Docker {{ docker_version.stdout }}"

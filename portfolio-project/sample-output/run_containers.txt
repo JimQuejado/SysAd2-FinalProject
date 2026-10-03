@@ -1,0 +1,43 @@
+# Sample run captured in a test environment (one Ubuntu 24.04 host, Docker install step skipped with --skip-tags install).
+# On your 3 VMs you will see the same tasks for centos-vm, ubuntu-vm1 and ubuntu-vm2, plus the Docker install tasks.
+
+
+PLAY [Run the portfolio containers on CentOS and Ubuntu] ***********************
+
+TASK [Gathering Facts] *********************************************************
+ok: [ubuntu-vm1]
+
+TASK [Make sure the image exists (run build_image.yml first)] ******************
+ok: [ubuntu-vm1]
+
+TASK [Start the portfolio containers] ******************************************
+changed: [ubuntu-vm1] => (item=portfolio-web -> port 8090)
+
+TASK [Gather the state of system services (used to detect firewalld)] **********
+ok: [ubuntu-vm1]
+
+TASK [Open the ports in firewalld (CentOS, only if firewalld is running)] ******
+skipping: [ubuntu-vm1] => (item=8090/tcp) 
+skipping: [ubuntu-vm1]
+
+TASK [Check whether ufw is active (Ubuntu)] ************************************
+ok: [ubuntu-vm1]
+
+TASK [Open the ports in ufw (Ubuntu, only if ufw is active)] *******************
+skipping: [ubuntu-vm1] => (item=8090/tcp) 
+skipping: [ubuntu-vm1]
+
+TASK [Wait until each container answers its health check] **********************
+ok: [ubuntu-vm1] => (item=portfolio-web)
+
+TASK [List the running portfolio containers] ***********************************
+ok: [ubuntu-vm1]
+
+TASK [Show where to open the site] *********************************************
+ok: [ubuntu-vm1] => (item=portfolio-web) => {
+    "msg": "ubuntu-vm1: 1 container(s) running. Open http://192.168.56.102:8090/ in a browser."
+}
+
+PLAY RECAP *********************************************************************
+ubuntu-vm1                 : ok=8    changed=1    unreachable=0    failed=0    skipped=2    rescued=0    ignored=0   
+

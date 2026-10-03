@@ -1,0 +1,27 @@
+# CentOS Stream / RHEL family: dnf + Docker's CentOS repository.
+- name: Remove Podman packages that conflict with Docker (CentOS)
+  ansible.builtin.dnf:
+    name:
+      - podman-docker
+      - buildah
+      - runc
+    state: absent
+
+- name: Install dnf plugins and Python requests (CentOS)
+  ansible.builtin.dnf:
+    name:
+      - dnf-plugins-core
+      - python3-requests
+    state: present
+
+- name: Add the Docker CE repository (CentOS)
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/centos/docker-ce.repo
+    dest: /etc/yum.repos.d/docker-ce.repo
+    mode: "0644"
+
+- name: Install Docker Engine (CentOS)
+  ansible.builtin.dnf:
+    name: "{{ docker_packages }}"
+    state: present
+    allowerasing: true
